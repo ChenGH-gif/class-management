@@ -1,0 +1,70 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>{% block title %}班级量化管理系统{% endblock %}</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://cdn.jsdelivr.net/npm/remixicon@4.1.0/fonts/remixicon.css" rel="stylesheet">
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <style>
+        .sidebar-link.active { background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); }
+        .card-hover:hover { transform: translateY(-2px); box-shadow: 0 10px 40px rgba(0,0,0,0.1); }
+        .gradient-bg { background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); }
+        .score-positive { color: #10b981; }
+        .score-negative { color: #ef4444; }
+        .fade-in { animation: fadeIn 0.3s ease-in; }
+        @keyframes fadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
+    </style>
+    {% block extra_css %}{% endblock %}
+</head>
+<body class="bg-gray-50 min-h-screen">
+    <div class="flex">
+        <!-- Sidebar -->
+        <aside class="w-64 bg-white shadow-lg min-h-screen fixed left-0 top-0 z-10">
+            <div class="p-6 gradient-bg text-white">
+                <h1 class="text-xl font-bold flex items-center gap-2">
+                    <i class="ri-graduation-cap-line text-2xl"></i>
+                    班级量化管理
+                </h1>
+                <p class="text-sm opacity-80 mt-1">Class Management System</p>
+            </div>
+            <nav class="mt-4 px-3">
+                <a href="/" class="sidebar-link flex items-center gap-3 px-4 py-3 rounded-lg text-gray-700 hover:bg-gray-100 mb-1 {% if request.path == '/' %}active text-white{% endif %}">
+                    <i class="ri-dashboard-line text-xl"></i>
+                    <span>数据看板</span>
+                </a>
+                <a href="/students" class="sidebar-link flex items-center gap-3 px-4 py-3 rounded-lg text-gray-700 hover:bg-gray-100 mb-1 {% if request.path == '/students' %}active text-white{% endif %}">
+                    <i class="ri-team-line text-xl"></i>
+                    <span>学生管理</span>
+                </a>
+                <a href="/scoring" class="sidebar-link flex items-center gap-3 px-4 py-3 rounded-lg text-gray-700 hover:bg-gray-100 mb-1 {% if request.path == '/scoring' %}active text-white{% endif %}">
+                    <i class="ri-star-line text-xl"></i>
+                    <span>量化评分</span>
+                </a>
+                <a href="/rankings" class="sidebar-link flex items-center gap-3 px-4 py-3 rounded-lg text-gray-700 hover:bg-gray-100 mb-1 {% if request.path == '/rankings' %}active text-white{% endif %}">
+                    <i class="ri-trophy-line text-xl"></i>
+                    <span>排行榜</span>
+                </a>
+                <a href="/reports" class="sidebar-link flex items-center gap-3 px-4 py-3 rounded-lg text-gray-700 hover:bg-gray-100 mb-1 {% if request.path == '/reports' %}active text-white{% endif %}">
+                    <i class="ri-bar-chart-grouped-line text-xl"></i>
+                    <span>统计报表</span>
+                </a>
+            </nav>
+        </aside>
+        
+        <!-- Main Content -->
+        <main class="ml-64 flex-1 p-8">
+            {% block content %}{% endblock %}
+        </main>
+    </div>
+    
+    <!-- Toast Notification -->
+    <div id="toast" class="fixed bottom-4 right-4 bg-gray-800 text-white px-6 py-3 rounded-lg shadow-lg hidden fade-in z-50">
+        <span id="toast-message"></span>
+    </div>
+    
+    <script src="/static/js/app.js"></script>
+    {% block extra_js %}{% endblock %}
+</body>
+</html>

@@ -1,0 +1,342 @@
+{% extends "base.html" %}
+
+{% block title %}学生管理 - 班级量化管理系统{% endblock %}
+
+{% block content %}
+<div class="fade-in">
+    <div class="flex justify-between items-center mb-8">
+        <div>
+            <h2 class="text-2xl font-bold text-gray-800">学生管理</h2>
+            <p class="text-gray-500 mt-1">管理班级学生信息</p>
+        </div>
+        <button onclick="openModal('addStudentModal')" class="px-6 py-3 gradient-bg text-white rounded-lg hover:opacity-90 transition-colors flex items-center gap-2">
+            <i class="ri-user-add-line"></i>
+            添加学生
+        </button>
+    </div>
+    
+    <!-- Search Box -->
+    <div class="bg-white rounded-xl shadow-sm p-4 mb-6">
+        <div class="flex items-center gap-4">
+            <div class="flex-1 relative">
+                <i class="ri-search-line absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400"></i>
+                <input type="text" id="searchInput" placeholder="搜索学生姓名、学号..." 
+                    class="w-full pl-10 pr-4 py-2 border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+                    oninput="filterStudents()">
+            </div>
+            <select id="groupFilter" class="px-4 py-2 border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500" onchange="filterStudents()">
+                <option value="">全部小组</option>
+                <option value="A组">A组</option>
+                <option value="B组">B组</option>
+                <option value="C组">C组</option>
+                <option value="D组">D组</option>
+            </select>
+        </div>
+    </div>
+    
+    <!-- Students Table -->
+    <div class="bg-white rounded-xl shadow-sm overflow-hidden">
+        <div class="overflow-x-auto">
+            <table class="w-full">
+                <thead class="bg-gray-50">
+                    <tr>
+                        <th class="px-6 py-4 text-left text-sm font-semibold text-gray-600">序号</th>
+                        <th class="px-6 py-4 text-left text-sm font-semibold text-gray-600">姓名</th>
+                        <th class="px-6 py-4 text-left text-sm font-semibold text-gray-600">学号</th>
+                        <th class="px-6 py-4 text-left text-sm font-semibold text-gray-600">性别</th>
+                        <th class="px-6 py-4 text-left text-sm font-semibold text-gray-600">小组</th>
+                        <th class="px-6 py-4 text-left text-sm font-semibold text-gray-600">总分</th>
+                        <th class="px-6 py-4 text-left text-sm font-semibold text-gray-600">备注</th>
+                        <th class="px-6 py-4 text-left text-sm font-semibold text-gray-600">操作</th>
+                    </tr>
+                </thead>
+                <tbody id="studentsTableBody" class="divide-y divide-gray-100">
+                    {% for student in students %}
+                    <tr class="hover:bg-gray-50 transition-colors" data-name="{{ student.name }}" data-id="{{ student.student_id }}" data-group="{{ student.group }}">
+                        <td class="px-6 py-4 text-gray-600">{{ loop.index }}</td>
+                        <td class="px-6 py-4 font-medium text-gray-800">{{ student.name }}</td>
+                        <td class="px-6 py-4 text-gray-600">{{ student.student_id or '-' }}</td>
+                        <td class="px-6 py-4 text-gray-600">{{ student.gender }}</td>
+                        <td class="px-6 py-4">
+                            <span class="px-2 py-1 bg-blue-100 text-blue-700 rounded-full text-sm">{{ student.group or '-' }}</span>
+                        </td>
+                        <td class="px-6 py-4">
+                            <span class="font-bold text-blue-600">{{ student.total_score }}</span>
+                        </td>
+                        <td class="px-6 py-4 text-gray-500 text-sm max-w-xs truncate">{{ student.notes or '-' }}</td>
+                        <td class="px-6 py-4">
+                            <div class="flex items-center gap-2">
+                                <button onclick="editStudent({{ student.id }}, '{{ student.name }}', '{{ student.student_id }}', '{{ student.gender }}', '{{ student.group }}', '{{ student.phone }}', '{{ student.notes }}')"
+                                    class="p-2 text-blue-600 hover:bg-blue-50 rounded-lg transition-colors">
+                                    <i class="ri-edit-line"></i>
+                                </button>
+                                <button onclick="deleteStudent({{ student.id }})"
+                                    class="p-2 text-red-600 hover:bg-red-50 rounded-lg transition-colors">
+                                    <i class="ri-delete-bin-line"></i>
+                                </button>
+                            </div>
+                        </td>
+                    </tr>
+                    {% endfor %}
+                    {% if not students %}
+                    <tr>
+                        <td colspan="8" class="px-6 py-12 text-center text-gray-400">
+                            <i class="ri-user-line text-5xl mb-2 block"></i>
+                            暂无学生数据，点击"添加学生"开始
+                        </td>
+                    </tr>
+                    {% endif %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>
+
+<!-- Add Student Modal -->
+<div id="addStudentModal" class="fixed inset-0 bg-black/50 hidden items-center justify-center z-50">
+    <div class="bg-white rounded-2xl shadow-2xl w-full max-w-md mx-4 overflow-hidden">
+        <div class="p-6 border-b border-gray-100">
+            <h3 class="text-xl font-bold text-gray-800 flex items-center gap-2">
+                <i class="ri-user-add-line text-blue-600"></i>
+                添加学生
+            </h3>
+        </div>
+        <form id="addStudentForm" class="p-6 space-y-4">
+            <div>
+                <label class="block text-sm font-medium text-gray-700 mb-1">姓名 <span class="text-red-500">*</span></label>
+                <input type="text" name="name" required
+                    class="w-full px-4 py-2 border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+                    placeholder="请输入学生姓名">
+            </div>
+            <div class="grid grid-cols-2 gap-4">
+                <div>
+                    <label class="block text-sm font-medium text-gray-700 mb-1">学号</label>
+                    <input type="text" name="student_id"
+                        class="w-full px-4 py-2 border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+                        placeholder="请输入学号">
+                </div>
+                <div>
+                    <label class="block text-sm font-medium text-gray-700 mb-1">性别</label>
+                    <select name="gender" class="w-full px-4 py-2 border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500">
+                        <option value="男">男</option>
+                        <option value="女">女</option>
+                    </select>
+                </div>
+            </div>
+            <div>
+                <label class="block text-sm font-medium text-gray-700 mb-1">小组</label>
+                <select name="group" class="w-full px-4 py-2 border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500">
+                    <option value="">请选择小组</option>
+                    <option value="A组">A组</option>
+                    <option value="B组">B组</option>
+                    <option value="C组">C组</option>
+                    <option value="D组">D组</option>
+                </select>
+            </div>
+            <div>
+                <label class="block text-sm font-medium text-gray-700 mb-1">联系电话</label>
+                <input type="text" name="phone"
+                    class="w-full px-4 py-2 border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+                    placeholder="请输入联系电话">
+            </div>
+            <div>
+                <label class="block text-sm font-medium text-gray-700 mb-1">备注</label>
+                <textarea name="notes" rows="2"
+                    class="w-full px-4 py-2 border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+                    placeholder="请输入备注信息"></textarea>
+            </div>
+        </form>
+        <div class="p-6 border-t border-gray-100 flex justify-end gap-3">
+            <button onclick="closeModal('addStudentModal')" class="px-6 py-2 border border-gray-200 rounded-lg hover:bg-gray-50 transition-colors">
+                取消
+            </button>
+            <button onclick="submitStudent()" class="px-6 py-2 gradient-bg text-white rounded-lg hover:opacity-90 transition-colors">
+                确认添加
+            </button>
+        </div>
+    </div>
+</div>
+
+<!-- Edit Student Modal -->
+<div id="editStudentModal" class="fixed inset-0 bg-black/50 hidden items-center justify-center z-50">
+    <div class="bg-white rounded-2xl shadow-2xl w-full max-w-md mx-4 overflow-hidden">
+        <div class="p-6 border-b border-gray-100">
+            <h3 class="text-xl font-bold text-gray-800 flex items-center gap-2">
+                <i class="ri-edit-line text-blue-600"></i>
+                编辑学生
+            </h3>
+        </div>
+        <form id="editStudentForm" class="p-6 space-y-4">
+            <input type="hidden" name="id" id="editStudentId">
+            <div>
+                <label class="block text-sm font-medium text-gray-700 mb-1">姓名 <span class="text-red-500">*</span></label>
+                <input type="text" name="name" id="editStudentName" required
+                    class="w-full px-4 py-2 border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500">
+            </div>
+            <div class="grid grid-cols-2 gap-4">
+                <div>
+                    <label class="block text-sm font-medium text-gray-700 mb-1">学号</label>
+                    <input type="text" name="student_id" id="editStudentSid"
+                        class="w-full px-4 py-2 border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500">
+                </div>
+                <div>
+                    <label class="block text-sm font-medium text-gray-700 mb-1">性别</label>
+                    <select name="gender" id="editStudentGender" class="w-full px-4 py-2 border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500">
+                        <option value="男">男</option>
+                        <option value="女">女</option>
+                    </select>
+                </div>
+            </div>
+            <div>
+                <label class="block text-sm font-medium text-gray-700 mb-1">小组</label>
+                <select name="group" id="editStudentGroup" class="w-full px-4 py-2 border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500">
+                    <option value="">请选择小组</option>
+                    <option value="A组">A组</option>
+                    <option value="B组">B组</option>
+                    <option value="C组">C组</option>
+                    <option value="D组">D组</option>
+                </select>
+            </div>
+            <div>
+                <label class="block text-sm font-medium text-gray-700 mb-1">联系电话</label>
+                <input type="text" name="phone" id="editStudentPhone"
+                    class="w-full px-4 py-2 border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500">
+            </div>
+            <div>
+                <label class="block text-sm font-medium text-gray-700 mb-1">备注</label>
+                <textarea name="notes" id="editStudentNotes" rows="2"
+                    class="w-full px-4 py-2 border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"></textarea>
+            </div>
+        </form>
+        <div class="p-6 border-t border-gray-100 flex justify-end gap-3">
+            <button onclick="closeModal('editStudentModal')" class="px-6 py-2 border border-gray-200 rounded-lg hover:bg-gray-50 transition-colors">
+                取消
+            </button>
+            <button onclick="updateStudent()" class="px-6 py-2 gradient-bg text-white rounded-lg hover:opacity-90 transition-colors">
+                保存修改
+            </button>
+        </div>
+    </div>
+</div>
+
+{% endblock %}
+
+{% block extra_js %}
+<script>
+    function openModal(id) {
+        document.getElementById(id).classList.remove('hidden');
+        document.getElementById(id).classList.add('flex');
+    }
+    
+    function closeModal(id) {
+        document.getElementById(id).classList.add('hidden');
+        document.getElementById(id).classList.remove('flex');
+    }
+    
+    async function submitStudent() {
+        const form = document.getElementById('addStudentForm');
+        const formData = new FormData(form);
+        const data = Object.fromEntries(formData);
+        
+        if (!data.name) {
+            showToast('请输入学生姓名');
+            return;
+        }
+        
+        try {
+            const response = await fetch('/api/students', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify(data)
+            });
+            
+            if (response.ok) {
+                showToast('添加成功');
+                closeModal('addStudentModal');
+                setTimeout(() => location.reload(), 500);
+            } else {
+                showToast('添加失败，请重试');
+            }
+        } catch (error) {
+            showToast('网络错误，请重试');
+        }
+    }
+    
+    function editStudent(id, name, studentId, gender, group, phone, notes) {
+        document.getElementById('editStudentId').value = id;
+        document.getElementById('editStudentName').value = name;
+        document.getElementById('editStudentSid').value = studentId;
+        document.getElementById('editStudentGender').value = gender;
+        document.getElementById('editStudentGroup').value = group;
+        document.getElementById('editStudentPhone').value = phone;
+        document.getElementById('editStudentNotes').value = notes;
+        openModal('editStudentModal');
+    }
+    
+    async function updateStudent() {
+        const id = document.getElementById('editStudentId').value;
+        const data = {
+            name: document.getElementById('editStudentName').value,
+            student_id: document.getElementById('editStudentSid').value,
+            gender: document.getElementById('editStudentGender').value,
+            group: document.getElementById('editStudentGroup').value,
+            phone: document.getElementById('editStudentPhone').value,
+            notes: document.getElementById('editStudentNotes').value
+        };
+        
+        if (!data.name) {
+            showToast('请输入学生姓名');
+            return;
+        }
+        
+        try {
+            const response = await fetch(`/api/students/${id}`, {
+                method: 'PUT',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify(data)
+            });
+            
+            if (response.ok) {
+                showToast('修改成功');
+                closeModal('editStudentModal');
+                setTimeout(() => location.reload(), 500);
+            } else {
+                showToast('修改失败，请重试');
+            }
+        } catch (error) {
+            showToast('网络错误，请重试');
+        }
+    }
+    
+    async function deleteStudent(id) {
+        if (!confirm('确定要删除该学生吗？相关评分记录也会被删除。')) return;
+        
+        try {
+            const response = await fetch(`/api/students/${id}`, { method: 'DELETE' });
+            if (response.ok) {
+                showToast('删除成功');
+                setTimeout(() => location.reload(), 500);
+            }
+        } catch (error) {
+            showToast('删除失败');
+        }
+    }
+    
+    function filterStudents() {
+        const search = document.getElementById('searchInput').value.toLowerCase();
+        const group = document.getElementById('groupFilter').value;
+        const rows = document.querySelectorAll('#studentsTableBody tr[data-name]');
+        
+        rows.forEach(row => {
+            const name = row.dataset.name.toLowerCase();
+            const id = row.dataset.id.toLowerCase();
+            const rowGroup = row.dataset.group;
+            
+            const matchSearch = !search || name.includes(search) || id.includes(search);
+            const matchGroup = !group || rowGroup === group;
+            
+            row.style.display = (matchSearch && matchGroup) ? '' : 'none';
+        });
+    }
+</script>
+{% endblock %}

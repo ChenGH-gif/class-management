@@ -1,0 +1,299 @@
+{% extends "base.html" %}
+
+{% block title %}量化评分 - 班级量化管理系统{% endblock %}
+
+{% block content %}
+<div class="fade-in">
+    <div class="mb-8">
+        <h2 class="text-2xl font-bold text-gray-800">量化评分</h2>
+        <p class="text-gray-500 mt-1">为学生进行量化评分管理</p>
+    </div>
+    
+    <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
+        <!-- Scoring Form -->
+        <div class="bg-white rounded-xl shadow-sm p-6">
+            <h3 class="text-lg font-semibold text-gray-800 mb-4 flex items-center gap-2">
+                <i class="ri-edit-2-line text-blue-600"></i>
+                评分表单
+            </h3>
+            <form id="scoringForm" class="space-y-4">
+                <div>
+                    <label class="block text-sm font-medium text-gray-700 mb-1">选择学生 <span class="text-red-500">*</span></label>
+                    <select name="student_id" id="scoringStudent" required
+                        class="w-full px-4 py-2 border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500">
+                        <option value="">请选择学生</option>
+                        {% for student in students %}
+                        <option value="{{ student.id }}">{{ student.name }} (当前: {{ student.total_score }}分)</option>
+                        {% endfor %}
+                    </select>
+                </div>
+                
+                <div>
+                    <label class="block text-sm font-medium text-gray-700 mb-1">评分类型 <span class="text-red-500">*</span></label>
+                    <select name="score_type" id="scoringType" required onchange="updateScoreOptions()"
+                        class="w-full px-4 py-2 border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500">
+                        <option value="奖励">奖励 (+)</option>
+                        <option value="扣分">扣分 (-)</option>
+                    </select>
+                </div>
+                
+                <div>
+                    <label class="block text-sm font-medium text-gray-700 mb-1">评分分类</label>
+                    <select name="category" id="scoringCategory"
+                        class="w-full px-4 py-2 border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500">
+                        <option value="学习">学习</option>
+                        <option value="纪律">纪律</option>
+                        <option value="活动">活动</option>
+                        <option value="卫生">卫生</option>
+                        <option value="体育">体育</option>
+                        <option value="艺术">艺术</option>
+                        <option value="品德">品德</option>
+                        <option value="其他">其他</option>
+                    </select>
+                </div>
+                
+                <div>
+                    <label class="block text-sm font-medium text-gray-700 mb-1">分数 <span class="text-red-500">*</span></label>
+                    <input type="number" name="score" id="scoringScore" required step="0.5" min="0.5" max="100"
+                        class="w-full px-4 py-2 border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+                        placeholder="请输入分数" value="1">
+                </div>
+                
+                <div>
+                    <label class="block text-sm font-medium text-gray-700 mb-1">原因说明</label>
+                    <textarea name="reason" rows="3"
+                        class="w-full px-4 py-2 border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+                        placeholder="请输入评分原因"></textarea>
+                </div>
+                
+                <div>
+                    <label class="block text-sm font-medium text-gray-700 mb-1">操作人</label>
+                    <input type="text" name="operator" value="班主任"
+                        class="w-full px-4 py-2 border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500">
+                </div>
+                
+                <button type="submit" class="w-full py-3 gradient-bg text-white rounded-lg hover:opacity-90 transition-colors font-medium">
+                    <i class="ri-check-line mr-2"></i>提交评分
+                </button>
+            </form>
+        </div>
+        
+        <!-- Quick Scoring -->
+        <div class="bg-white rounded-xl shadow-sm p-6">
+            <h3 class="text-lg font-semibold text-gray-800 mb-4 flex items-center gap-2">
+                <i class="ri-flashlight-line text-yellow-500"></i>
+                快速评分
+            </h3>
+            
+            <div class="mb-4">
+                <label class="block text-sm font-medium text-gray-700 mb-1">选择学生</label>
+                <select id="quickStudent" class="w-full px-4 py-2 border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500">
+                    <option value="">请选择学生</option>
+                    {% for student in students %}
+                    <option value="{{ student.id }}">{{ student.name }}</option>
+                    {% endfor %}
+                </select>
+            </div>
+            
+            <div class="space-y-3">
+                <p class="text-sm font-medium text-gray-700">奖励加分</p>
+                <div class="grid grid-cols-3 gap-2">
+                    <button onclick="quickScore('奖励', '学习', 5)" class="py-2 px-3 bg-green-100 text-green-700 rounded-lg hover:bg-green-200 transition-colors text-sm">
+                        作业优秀 +5
+                    </button>
+                    <button onclick="quickScore('奖励', '学习', 3)" class="py-2 px-3 bg-green-100 text-green-700 rounded-lg hover:bg-green-200 transition-colors text-sm">
+                        课堂表现 +3
+                    </button>
+                    <button onclick="quickScore('奖励', '纪律', 5)" class="py-2 px-3 bg-green-100 text-green-700 rounded-lg hover:bg-green-200 transition-colors text-sm">
+                        拾金不昧 +5
+                    </button>
+                    <button onclick="quickScore('奖励', '活动', 10)" class="py-2 px-3 bg-green-100 text-green-700 rounded-lg hover:bg-green-200 transition-colors text-sm">
+                        比赛获奖 +10
+                    </button>
+                    <button onclick="quickScore('奖励', '卫生', 3)" class="py-2 px-3 bg-green-100 text-green-700 rounded-lg hover:bg-green-200 transition-colors text-sm">
+                        值日认真 +3
+                    </button>
+                    <button onclick="quickScore('奖励', '体育', 5)" class="py-2 px-3 bg-green-100 text-green-700 rounded-lg hover:bg-green-200 transition-colors text-sm">
+                        运动会加分 +5
+                    </button>
+                </div>
+                
+                <p class="text-sm font-medium text-gray-700 mt-4">扣分项</p>
+                <div class="grid grid-cols-3 gap-2">
+                    <button onclick="quickScore('扣分', '纪律', -3)" class="py-2 px-3 bg-red-100 text-red-700 rounded-lg hover:bg-red-200 transition-colors text-sm">
+                        迟到 -3
+                    </button>
+                    <button onclick="quickScore('扣分', '纪律', -5)" class="py-2 px-3 bg-red-100 text-red-700 rounded-lg hover:bg-red-200 transition-colors text-sm">
+                        旷课 -5
+                    </button>
+                    <button onclick="quickScore('扣分', '卫生', -2)" class="py-2 px-3 bg-red-100 text-red-700 rounded-lg hover:bg-red-200 transition-colors text-sm">
+                        卫生不合格 -2
+                    </button>
+                    <button onclick="quickScore('扣分', '学习', -5)" class="py-2 px-3 bg-red-100 text-red-700 rounded-lg hover:bg-red-200 transition-colors text-sm">
+                        作业未交 -5
+                    </button>
+                    <button onclick="quickScore('扣分', '纪律', -10)" class="py-2 px-3 bg-red-100 text-red-700 rounded-lg hover:bg-red-200 transition-colors text-sm">
+                        严重违纪 -10
+                    </button>
+                    <button onclick="quickScore('扣分', '其他', -1)" class="py-2 px-3 bg-red-100 text-red-700 rounded-lg hover:bg-red-200 transition-colors text-sm">
+                        其他扣分 -1
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <!-- Recent Scoring Records -->
+    <div class="mt-6 bg-white rounded-xl shadow-sm p-6">
+        <h3 class="text-lg font-semibold text-gray-800 mb-4 flex items-center gap-2">
+            <i class="ri-history-line text-blue-500"></i>
+            本次会话评分记录
+        </h3>
+        <div id="sessionRecords" class="space-y-2">
+            <p class="text-gray-400 text-center py-4">暂无记录</p>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+    let sessionRecords = [];
+    
+    function updateScoreOptions() {
+        const type = document.getElementById('scoringType').value;
+        const scoreInput = document.getElementById('scoringScore');
+        if (type === '扣分') {
+            scoreInput.min = '0.5';
+            scoreInput.placeholder = '请输入扣分值（正数）';
+        } else {
+            scoreInput.min = '0.5';
+            scoreInput.placeholder = '请输入加分值';
+        }
+    }
+    
+    document.getElementById('scoringForm').addEventListener('submit', async (e) => {
+        e.preventDefault();
+        const form = e.target;
+        const formData = new FormData(form);
+        const data = Object.fromEntries(formData);
+        
+        if (!data.student_id) {
+            showToast('请选择学生');
+            return;
+        }
+        
+        // Handle negative scores for "扣分" type
+        let score = parseFloat(data.score);
+        if (data.score_type === '扣分') {
+            score = -Math.abs(score);
+        } else {
+            score = Math.abs(score);
+        }
+        
+        try {
+            const response = await fetch('/api/scores', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                    ...data,
+                    score: score,
+                    student_id: parseInt(data.student_id)
+                })
+            });
+            
+            if (response.ok) {
+                const result = await response.json();
+                showToast('评分成功');
+                
+                // Add to session records
+                sessionRecords.unshift({
+                    student: document.getElementById('scoringStudent').options[document.getElementById('scoringStudent').selectedIndex].text,
+                    type: data.score_type,
+                    category: data.category,
+                    score: score,
+                    reason: data.reason || '-',
+                    time: new Date().toLocaleString()
+                });
+                renderSessionRecords();
+                
+                // Reset form
+                form.reset();
+                document.getElementById('scoringStudent').value = '';
+            }
+        } catch (error) {
+            showToast('评分失败');
+        }
+    });
+    
+    async function quickScore(type, category, score) {
+        const studentId = document.getElementById('quickStudent').value;
+        if (!studentId) {
+            showToast('请先选择学生');
+            return;
+        }
+        
+        const reasons = {
+            '奖励': {
+                '学习': '课堂表现优秀',
+                '活动': '比赛获奖',
+                '卫生': '值日认真',
+                '体育': '运动会加分',
+                '纪律': '拾金不昧',
+                '其他': '其他加分'
+            },
+            '扣分': {
+                '纪律': '违纪',
+                '卫生': '卫生不合格',
+                '学习': '作业未交',
+                '其他': '其他扣分'
+            }
+        };
+        
+        try {
+            const response = await fetch('/api/scores', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                    student_id: parseInt(studentId),
+                    score_type: type,
+                    category: category,
+                    score: score,
+                    reason: reasons[type]?.[category] || '快速评分',
+                    operator: '班主任'
+                })
+            });
+            
+            if (response.ok) {
+                showToast(`${type}成功: ${score > 0 ? '+' : ''}${score}分`);
+                location.reload();
+            }
+        } catch (error) {
+            showToast('评分失败');
+        }
+    }
+    
+    function renderSessionRecords() {
+        const container = document.getElementById('sessionRecords');
+        if (sessionRecords.length === 0) {
+            container.innerHTML = '<p class="text-gray-400 text-center py-4">暂无记录</p>';
+            return;
+        }
+        
+        container.innerHTML = sessionRecords.map(r => `
+            <div class="flex items-center justify-between p-3 bg-gray-50 rounded-lg">
+                <div>
+                    <span class="font-medium text-gray-800">${r.student}</span>
+                    <span class="text-sm text-gray-500 ml-2">${r.category} - ${r.reason}</span>
+                </div>
+                <div class="text-right">
+                    <span class="font-bold ${r.score > 0 ? 'score-positive' : 'score-negative'}">
+                        ${r.score > 0 ? '+' : ''}${r.score}分
+                    </span>
+                    <p class="text-xs text-gray-400">${r.time}</p>
+                </div>
+            </div>
+        `).join('');
+    }
+</script>
+{% endblock %}
